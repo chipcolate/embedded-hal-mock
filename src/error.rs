@@ -5,6 +5,8 @@ use std::{error::Error as StdError, fmt, io};
 pub enum MockError {
     /// An I/O-Error occurred
     Io(io::ErrorKind),
+    /// Generic error message
+    Generic(String),
 }
 
 impl From<io::Error> for MockError {
@@ -17,6 +19,7 @@ impl fmt::Display for MockError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             MockError::Io(kind) => write!(f, "I/O error: {:?}", kind),
+            MockError::Generic(msg) => write!(f, "Generic error: {:?}", msg),
         }
     }
 }

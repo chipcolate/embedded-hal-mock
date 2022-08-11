@@ -336,7 +336,11 @@ impl<Word: Clone> Mock<Word> {
             .expected_modes
             .lock()
             .expect("unable to lock serial mock in call to done");
-        let modes = lock.take().expect("attempted to take None from Optional");
+        // let modes = lock.take().expect("attempted to take None from Optional");
+        let modes = match lock.take() {
+            Some(modes) => modes,
+            None => return,
+        };
         assert!(
             modes.is_empty(),
             "serial mock has unsatisfied expectations after call to done"
@@ -349,9 +353,11 @@ impl<Word: Clone> Mock<Word> {
             .expected_modes
             .lock()
             .expect("unable to lock serial mock in call to pop");
-        let queue = lock
-            .as_mut()
-            .expect("attempt to get queue reference from a None");
+        // let queue = lock.as_mut().expect("attempted to take None from Optional");
+        let queue = match lock.as_mut() {
+            Some(queue) => queue,
+            None => return None,
+        };
         queue.pop_front()
     }
 }
@@ -363,7 +369,14 @@ where
     type Error = MockError;
 
     fn read(&mut self) -> nb::Result<Word, Self::Error> {
-        let t = self.pop().expect("called serial::read with no expectation");
+        let t = match self.pop() {
+            Some(t) => t,
+            None => {
+                return Err(nb::Error::Other(MockError::Generic(
+                    "Blank read".to_string(),
+                )))
+            }
+        };
         match t {
             Mode::Read(word) => Ok(word),
             Mode::ReadError(error) => Err(error),
